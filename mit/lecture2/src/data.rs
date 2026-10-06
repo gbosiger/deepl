@@ -246,3 +246,45 @@ pub fn normalize_heart_data(
         })
         .collect()
 }
+
+#[derive(Debug)]
+pub struct EncodedData {
+    input: [f64; 29],
+    target: f64
+}
+
+pub fn encode_data(raw: &HeartData, normalized: &HeartNormalizedData) -> EncodedData {
+    EncodedData {
+    [ 
+        normalized.age,
+        normalized.trestbps;
+        normalized.chol;
+        normalized.thalach;
+        normalized.oldpeak;
+        normalized.slope;
+        f64::from(raw.sex[0]);
+        f64::from(raw.sex[1]);
+        f64::from(raw.cp[0]);
+        f64::from(raw.cp[1]);
+        f64::from(raw.cp[2]);
+        f64::from(raw.cp[3]);
+        f64::from(raw.cp[4]);
+        f64::from(raw.fbs[0]);
+        f64::from(raw.fbs[1]);
+        f64::from(raw.restecg[0]);
+        f64::from(raw.restecg[1]);
+        f64::from(raw.restecg[2]);
+        f64::from(raw.ca[0]);
+        f64::from(raw.ca[1]);
+        f64::from(raw.ca[2]);
+        f64::from(raw.ca[3]);
+        f64::from(raw.thal[0]);
+        f64::from(raw.thal[1]);
+        f64::from(raw.thal[2]);
+        f64::from(raw.thal[3]);
+        f64::from(raw.thal[4]);
+    ], f64::from(raw.target)
+    }
+}
+
+

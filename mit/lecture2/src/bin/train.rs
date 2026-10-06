@@ -65,5 +65,10 @@ fn main() -> anyhow::Result<()> {
     println!("Validation samples: {}", encoded_validation_data.len());
     println!("Test samples: {}", encoded_testing_data.len());
 
+    // We need to store normalization values
+    let path = Path::new("normalization.csv");
+    write_normalization_params(path, &normalization)
+        .expect("Storing of normalization params failed");
+
     Ok(())
 }

@@ -13,10 +13,11 @@
 // TODO 10: Decide how to handle invalid rows and unfamiliar categories.
 
 use rand::seq::SliceRandom;
-use rand::{rngs::StdRng, SeedableRng};
-use serde::de::Error;
+use rand::{SeedableRng, rngs::StdRng};
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
+use serde::de::Error;
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -176,7 +177,7 @@ pub struct HeartNormalizedData {
     slope: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Normalization {
     pub means: [f64; 6],
     pub std_devs: [f64; 6],
@@ -231,11 +232,7 @@ pub fn fit_normalization(data: &[&HeartData]) -> Normalization {
         .map(|sum| {
             let std_dev = (sum / data.len() as f64).sqrt();
             // Constant features normalize to zero without division by zero.
-            if std_dev == 0.0 {
-                1.0
-            } else {
-                std_dev
-            }
+            if std_dev == 0.0 { 1.0 } else { std_dev }
         });
 
     Normalization { means, std_devs }
@@ -301,4 +298,50 @@ pub fn encode_data(raw: &HeartData, normalized: &HeartNormalizedData) -> Encoded
         ],
         target: f64::from(raw.target),
     }
+}
+
+// This order matches the numeric arrays used during normalization.
+const NUMERIC_FEATURES: [&str; 6] = ["age", "trestbps", "chol", "thalach", "oldpeak", "slope"];
+
+// CSV rows have scalar fields; the in-memory Normalization keeps its arrays.
+#[derive(Debug, Serialize, Deserialize)]
+struct NormalizationRow {
+    feature: String,
+    mean: f64,
+    std_dev: f64,
+}
+
+pub fn write_normalization_params(
+    path: &Path,
+    normalization: &Normalization,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut writer = csv::Writer::from_path(path)?;
+    for (i, feature) in NUMERIC_FEATURES.iter().enumerate() {
+        writer.serialize(NormalizationRow {
+            feature: (*feature).to_owned(),
+            mean: normalization.means[i],
+            std_dev: normalization.std_devs[i],
+        })?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+pub fn read_normalization_params(path: &Path) -> Result<Normalization, Box<dyn std::error::Error>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let rows: Vec<NormalizationRow> = reader.deserialize().collect::<Result<_, _>>()?;
+    if rows.len() != 6 {
+        return Err("Normalization CSV must contain exactly six rows".into());
+    }
+
+    // Fixed order: age, trestbps, chol, thalach, oldpeak, slope.
+    let mut normalization = Normalization {
+        means: [0.0; 6],
+        std_devs: [0.0; 6],
+    };
+    for (i, row) in rows.iter().enumerate() {
+        normalization.means[i] = row.mean;
+        normalization.std_devs[i] = row.std_dev;
+    }
+    Ok(normalization)
 }

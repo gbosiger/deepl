@@ -4,14 +4,16 @@
 // TODO 2: Load the CSV and report the row count and a few example rows.
 // TODO 3: Separate the target from the input features.
 // TODO 4: Decide which features are numeric and which are categorical.
-//
 // TODO 5: Create reproducible training, validation, and test splits.
+//
 // TODO 6: Fit normalization statistics using the training data.
 // TODO 7: Implement one-hot encoding with a consistent category/feature order.
 // TODO 8: Combine the processed features into 29-value input vectors.
 // TODO 9: Decide how to store and reload preprocessing information for prediction.
 // TODO 10: Decide how to handle invalid rows and unfamiliar categories.
 
+use rand::seq::SliceRandom;
+use rand::{rngs::StdRng, SeedableRng};
 use serde::de::Error;
 use serde::Deserialize;
 use serde::Deserializer;
@@ -135,3 +137,21 @@ pub fn read_heart_data(path: &Path) -> Result<Vec<HeartData>, csv::Error> {
 
     Ok(entries)
 }
+
+// Prepare slices for training and testing by shuffling and spitting
+pub fn shuffle_and_split_heart_data(data: &[HeartData]) -> (Vec<&HeartData>, Vec<&HeartData>) {
+    let mut shuffled_data: Vec<&HeartData> = data.iter().collect();
+    let mut rng = StdRng::seed_from_u64(42);
+    shuffled_data.shuffle(&mut rng);
+
+    let count = data.len() * 80 / 100;
+    // We take part of the shuffled_data vector here
+    // It is a copy, which I do not like, but otherwise the user would need to hold the shuffled vector
+    // as well
+    let test_data = shuffled_data.split_off(count);
+
+    (shuffled_data, test_data)
+}
+
+// Normalize slices for training
+//pub fn normalize_heart_data(mut data: &[HeartData]) {}

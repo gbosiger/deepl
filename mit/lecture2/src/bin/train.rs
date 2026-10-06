@@ -1,4 +1,4 @@
-use lecture2::data::read_heart_data;
+use lecture2::data::*;
 use std::path::Path;
 
 fn main() -> anyhow::Result<()> {
@@ -8,11 +8,21 @@ fn main() -> anyhow::Result<()> {
         .join("data")
         .join("heart.csv");
 
+    // Load data
     let data = read_heart_data(&path)?;
     println!("Loaded {} rows", data.len());
 
+    // Print couple of entries
     for row in data.iter().take(3) {
         println!("{row:?}");
     }
+
+    // Split training and test data
+    let (training_samples, testing_samples) = shuffle_and_split_heart_data(&data);
+
+    // Print sample sizes
+    println!("Training samples: {}", training_samples.len());
+    println!("Test samples: {}", testing_samples.len());
+
     Ok(())
 }

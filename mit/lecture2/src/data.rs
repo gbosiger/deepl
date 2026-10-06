@@ -6,8 +6,8 @@
 // TODO 4: Decide which features are numeric and which are categorical.
 // TODO 5: Create reproducible training, validation, and test splits.
 // TODO 6: Fit normalization statistics using the training data.
-//
 // TODO 7: Implement one-hot encoding with a consistent category/feature order.
+//
 // TODO 8: Combine the processed features into 29-value input vectors.
 // TODO 9: Decide how to store and reload preprocessing information for prediction.
 // TODO 10: Decide how to handle invalid rows and unfamiliar categories.
@@ -163,11 +163,15 @@ pub struct HeartNormalizedData {
     slope: f64,
 }
 
-// Normalize slices for training
-pub fn normalize_heart_data(data: &[&HeartData]) -> Vec<HeartNormalizedData> {
-    if data.is_empty() {
-        return Vec::new();
-    }
+#[derive(Debug)]
+pub struct Normalization {
+    pub means: [f64; 6],
+    pub std_devs: [f64; 6],
+}
+
+// Calculate means and std deviations
+pub fn fit_normalization(data: &[&HeartData]) -> Normalization {
+    assert!(!data.is_empty());
 
     let means = data
         .iter()
@@ -221,14 +225,24 @@ pub fn normalize_heart_data(data: &[&HeartData]) -> Vec<HeartNormalizedData> {
             }
         });
 
+    Normalization { means, std_devs }
+}
+
+// Normalize slices for training
+pub fn normalize_heart_data(
+    data: &[&HeartData],
+    normalization: &Normalization,
+) -> Vec<HeartNormalizedData> {
+    assert!(!data.is_empty());
+
     data.iter()
         .map(|row| HeartNormalizedData {
-            age: ((row.age as f64) - means[0]) / std_devs[0],
-            trestbps: (row.trestbps as f64 - means[1]) / std_devs[1],
-            chol: (row.chol as f64 - means[2]) / std_devs[2],
-            thalach: (row.thalach as f64 - means[3]) / std_devs[3],
-            oldpeak: (row.oldpeak as f64 - means[4]) / std_devs[4],
-            slope: (row.slope as f64 - means[5]) / std_devs[5],
+            age: ((row.age as f64) - normalization.means[0]) / normalization.std_devs[0],
+            trestbps: (row.trestbps as f64 - normalization.means[1]) / normalization.std_devs[1],
+            chol: (row.chol as f64 - normalization.means[2]) / normalization.std_devs[2],
+            thalach: (row.thalach as f64 - normalization.means[3]) / normalization.std_devs[3],
+            oldpeak: (row.oldpeak as f64 - normalization.means[4]) / normalization.std_devs[4],
+            slope: (row.slope as f64 - normalization.means[5]) / normalization.std_devs[5],
         })
         .collect()
 }

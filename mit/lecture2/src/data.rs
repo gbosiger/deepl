@@ -4,6 +4,7 @@
 // TODO 2: Load the CSV and report the row count and a few example rows.
 // TODO 3: Separate the target from the input features.
 // TODO 4: Decide which features are numeric and which are categorical.
+//
 // TODO 5: Create reproducible training, validation, and test splits.
 // TODO 6: Fit normalization statistics using the training data.
 // TODO 7: Implement one-hot encoding with a consistent category/feature order.
@@ -13,51 +14,113 @@
 
 use serde::de::Error;
 use serde::Deserialize;
+use serde::Deserializer;
 use std::path::Path;
-
-// The CSV also contains "1" and "2"; keep them as distinct categories.
-#[derive(Debug, Deserialize)]
-pub enum ThalKind {
-    #[serde(rename = "1")]
-    Code1,
-    #[serde(rename = "2")]
-    Code2,
-    #[serde(rename = "normal")]
-    Normal,
-    #[serde(rename = "fixed")]
-    Fixed,
-    #[serde(rename = "reversible")]
-    Reversible,
-}
 
 #[derive(Debug, Deserialize)]
 pub struct HeartData {
     pub age: u8,
     #[serde(deserialize_with = "deserialize_sex")]
     pub sex: [u8; 2],
-    pub cp: u8,
+    #[serde(deserialize_with = "deserialize_cp")]
+    pub cp: [u8; 5],
     pub trestbps: u16,
     pub chol: u16,
-    pub fbs: u8,
-    pub restecg: u8,
+    #[serde(deserialize_with = "deserialize_fbs")]
+    pub fbs: [u8; 2],
+    #[serde(deserialize_with = "deserialize_restecg")]
+    pub restecg: [u8; 3],
     pub thalach: u16,
     pub exang: u8,
     pub oldpeak: f32,
     pub slope: u8,
-    pub ca: u8,
-    pub thal: ThalKind,
+    #[serde(deserialize_with = "deserialize_ca")]
+    pub ca: [u8; 4],
+    #[serde(deserialize_with = "deserialize_thal")]
+    pub thal: [u8; 5],
     pub target: u8,
 }
 
 fn deserialize_sex<'de, D>(deserializer: D) -> Result<[u8; 2], D::Error>
 where
-    D: serde::Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     let val = u8::deserialize(deserializer)?;
     match val {
         0 => Ok([1, 0]),
         1 => Ok([0, 1]),
         _ => Err(D::Error::custom("sex must be 0 or 1")),
+    }
+}
+
+fn deserialize_cp<'de, D>(deserializer: D) -> Result<[u8; 5], D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = u8::deserialize(deserializer)?;
+    match val {
+        0 => Ok([1, 0, 0, 0, 0]),
+        1 => Ok([0, 1, 0, 0, 0]),
+        2 => Ok([0, 0, 1, 0, 0]),
+        3 => Ok([0, 0, 0, 1, 0]),
+        4 => Ok([0, 0, 0, 0, 1]),
+        _ => Err(D::Error::custom("cp must be between 0..=1")),
+    }
+}
+
+fn deserialize_fbs<'de, D>(deserializer: D) -> Result<[u8; 2], D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = u8::deserialize(deserializer)?;
+    match val {
+        0 => Ok([1, 0]),
+        1 => Ok([0, 1]),
+        _ => Err(D::Error::custom("cp must be 0 or 1")),
+    }
+}
+
+fn deserialize_restecg<'de, D>(deserializer: D) -> Result<[u8; 3], D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = u8::deserialize(deserializer)?;
+    match val {
+        0 => Ok([1, 0, 0]),
+        1 => Ok([0, 1, 0]),
+        2 => Ok([0, 0, 1]),
+        _ => Err(D::Error::custom("restecg must be between 0..=2")),
+    }
+}
+
+fn deserialize_ca<'de, D>(deserializer: D) -> Result<[u8; 4], D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = u8::deserialize(deserializer)?;
+    match val {
+        0 => Ok([1, 0, 0, 0]),
+        1 => Ok([0, 1, 0, 0]),
+        2 => Ok([0, 0, 1, 0]),
+        3 => Ok([0, 0, 0, 1]),
+        _ => Err(D::Error::custom("ca must be between 0..=3")),
+    }
+}
+
+fn deserialize_thal<'de, D>(deserializer: D) -> Result<[u8; 5], D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = String::deserialize(deserializer)?;
+    match val.as_str() {
+        "1" => Ok([1, 0, 0, 0, 0]),
+        "2" => Ok([0, 1, 0, 0, 0]),
+        "normal" => Ok([0, 0, 1, 0, 0]),
+        "fixed" => Ok([0, 0, 0, 1, 0]),
+        "reversible" => Ok([0, 0, 0, 0, 1]),
+        _ => Err(D::Error::custom(
+            "thal must be between 1 2, normal, fixed, or reversible",
+        )),
     }
 }
 

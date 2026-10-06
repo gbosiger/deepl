@@ -24,5 +24,13 @@ fn main() -> anyhow::Result<()> {
     println!("Training samples: {}", training_samples.len());
     println!("Test samples: {}", testing_samples.len());
 
+    let training_samples_normalized = normalize_heart_data(&training_samples);
+    let testing_samples_normalized = normalize_heart_data(&testing_samples);
+
+    // Print couple of normalized training entries
+    for row in training_samples_normalized.iter().take(3) {
+        println!("{row:?}");
+    }
+
     Ok(())
 }

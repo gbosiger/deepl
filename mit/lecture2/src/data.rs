@@ -5,8 +5,8 @@
 // TODO 3: Separate the target from the input features.
 // TODO 4: Decide which features are numeric and which are categorical.
 // TODO 5: Create reproducible training, validation, and test splits.
-//
 // TODO 6: Fit normalization statistics using the training data.
+//
 // TODO 7: Implement one-hot encoding with a consistent category/feature order.
 // TODO 8: Combine the processed features into 29-value input vectors.
 // TODO 9: Decide how to store and reload preprocessing information for prediction.
@@ -153,5 +153,82 @@ pub fn shuffle_and_split_heart_data(data: &[HeartData]) -> (Vec<&HeartData>, Vec
     (shuffled_data, test_data)
 }
 
+#[derive(Debug)]
+pub struct HeartNormalizedData {
+    age: f64,
+    trestbps: f64,
+    chol: f64,
+    thalach: f64,
+    oldpeak: f64,
+    slope: f64,
+}
+
 // Normalize slices for training
-//pub fn normalize_heart_data(mut data: &[HeartData]) {}
+pub fn normalize_heart_data(data: &[&HeartData]) -> Vec<HeartNormalizedData> {
+    if data.is_empty() {
+        return Vec::new();
+    }
+
+    let means = data
+        .iter()
+        .map(|row| {
+            [
+                f64::from(row.age),
+                f64::from(row.trestbps),
+                f64::from(row.chol),
+                f64::from(row.thalach),
+                f64::from(row.oldpeak),
+                f64::from(row.slope),
+            ]
+        })
+        .fold([0.0_f64; 6], |sum, row| {
+            [
+                sum[0] + row[0],
+                sum[1] + row[1],
+                sum[2] + row[2],
+                sum[3] + row[3],
+                sum[4] + row[4],
+                sum[5] + row[5],
+            ]
+        })
+        .map(|sum| sum / data.len() as f64);
+
+    let std_devs = data
+        .iter()
+        .map(|row| {
+            [
+                (row.age as f64 - means[0]).powi(2),
+                (row.trestbps as f64 - means[1]).powi(2),
+                (row.chol as f64 - means[2]).powi(2),
+                (row.thalach as f64 - means[3]).powi(2),
+                (row.oldpeak as f64 - means[4]).powi(2),
+                (row.slope as f64 - means[5]).powi(2),
+            ]
+        })
+        .fold([0.0_f64; 6], |mut sum, row| {
+            for i in 0..6 {
+                sum[i] += row[i];
+            }
+            sum
+        })
+        .map(|sum| {
+            let std_dev = (sum / data.len() as f64).sqrt();
+            // Constant features normalize to zero without division by zero.
+            if std_dev == 0.0 {
+                1.0
+            } else {
+                std_dev
+            }
+        });
+
+    data.iter()
+        .map(|row| HeartNormalizedData {
+            age: ((row.age as f64) - means[0]) / std_devs[0],
+            trestbps: (row.trestbps as f64 - means[1]) / std_devs[1],
+            chol: (row.chol as f64 - means[2]) / std_devs[2],
+            thalach: (row.thalach as f64 - means[3]) / std_devs[3],
+            oldpeak: (row.oldpeak as f64 - means[4]) / std_devs[4],
+            slope: (row.slope as f64 - means[5]) / std_devs[5],
+        })
+        .collect()
+}

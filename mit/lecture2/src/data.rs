@@ -33,7 +33,8 @@ pub struct HeartData {
     #[serde(deserialize_with = "deserialize_restecg")]
     pub restecg: [u8; 3],
     pub thalach: u16,
-    pub exang: u8,
+    #[serde(deserialize_with = "deserialize_exang")]
+    pub exang: [u8; 2],
     pub oldpeak: f32,
     pub slope: u8,
     #[serde(deserialize_with = "deserialize_ca")]
@@ -92,6 +93,18 @@ where
         1 => Ok([0, 1, 0]),
         2 => Ok([0, 0, 1]),
         _ => Err(D::Error::custom("restecg must be between 0..=2")),
+    }
+}
+
+fn deserialize_exang<'de, D>(deserializer: D) -> Result<[u8; 2], D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = u8::deserialize(deserializer)?;
+    match val {
+        0 => Ok([1, 0]),
+        1 => Ok([0, 1]),
+        _ => Err(D::Error::custom("exang must be 0 or 1")),
     }
 }
 
@@ -250,41 +263,42 @@ pub fn normalize_heart_data(
 #[derive(Debug)]
 pub struct EncodedData {
     input: [f64; 29],
-    target: f64
+    target: f64,
 }
 
 pub fn encode_data(raw: &HeartData, normalized: &HeartNormalizedData) -> EncodedData {
     EncodedData {
-    [ 
-        normalized.age,
-        normalized.trestbps;
-        normalized.chol;
-        normalized.thalach;
-        normalized.oldpeak;
-        normalized.slope;
-        f64::from(raw.sex[0]);
-        f64::from(raw.sex[1]);
-        f64::from(raw.cp[0]);
-        f64::from(raw.cp[1]);
-        f64::from(raw.cp[2]);
-        f64::from(raw.cp[3]);
-        f64::from(raw.cp[4]);
-        f64::from(raw.fbs[0]);
-        f64::from(raw.fbs[1]);
-        f64::from(raw.restecg[0]);
-        f64::from(raw.restecg[1]);
-        f64::from(raw.restecg[2]);
-        f64::from(raw.ca[0]);
-        f64::from(raw.ca[1]);
-        f64::from(raw.ca[2]);
-        f64::from(raw.ca[3]);
-        f64::from(raw.thal[0]);
-        f64::from(raw.thal[1]);
-        f64::from(raw.thal[2]);
-        f64::from(raw.thal[3]);
-        f64::from(raw.thal[4]);
-    ], f64::from(raw.target)
+        input: [
+            normalized.age,
+            normalized.trestbps,
+            normalized.chol,
+            normalized.thalach,
+            normalized.oldpeak,
+            normalized.slope,
+            f64::from(raw.sex[0]),
+            f64::from(raw.sex[1]),
+            f64::from(raw.cp[0]),
+            f64::from(raw.cp[1]),
+            f64::from(raw.cp[2]),
+            f64::from(raw.cp[3]),
+            f64::from(raw.cp[4]),
+            f64::from(raw.fbs[0]),
+            f64::from(raw.fbs[1]),
+            f64::from(raw.restecg[0]),
+            f64::from(raw.restecg[1]),
+            f64::from(raw.restecg[2]),
+            f64::from(raw.exang[0]),
+            f64::from(raw.exang[1]),
+            f64::from(raw.ca[0]),
+            f64::from(raw.ca[1]),
+            f64::from(raw.ca[2]),
+            f64::from(raw.ca[3]),
+            f64::from(raw.thal[0]),
+            f64::from(raw.thal[1]),
+            f64::from(raw.thal[2]),
+            f64::from(raw.thal[3]),
+            f64::from(raw.thal[4]),
+        ],
+        target: f64::from(raw.target),
     }
 }
-
-

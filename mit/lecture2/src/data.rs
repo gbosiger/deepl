@@ -64,7 +64,7 @@ where
         2 => Ok([0, 0, 1, 0, 0]),
         3 => Ok([0, 0, 0, 1, 0]),
         4 => Ok([0, 0, 0, 0, 1]),
-        _ => Err(D::Error::custom("cp must be between 0..=1")),
+        _ => Err(D::Error::custom("cp must be between 0..=4")),
     }
 }
 
@@ -76,7 +76,7 @@ where
     match val {
         0 => Ok([1, 0]),
         1 => Ok([0, 1]),
-        _ => Err(D::Error::custom("cp must be 0 or 1")),
+        _ => Err(D::Error::custom("fbs must be 0 or 1")),
     }
 }
 

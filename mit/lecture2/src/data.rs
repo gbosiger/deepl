@@ -11,6 +11,7 @@
 // TODO 9: Decide how to store and reload preprocessing information for prediction.
 // TODO 10: Decide how to handle invalid rows and unfamiliar categories.
 
+use serde::de::Error;
 use serde::Deserialize;
 use std::path::Path;
 
@@ -32,7 +33,8 @@ pub enum ThalKind {
 #[derive(Debug, Deserialize)]
 pub struct HeartData {
     pub age: u8,
-    pub sex: u8, // CSV uses 0/1; conversion to bool can happen during loading.
+    #[serde(deserialize_with = "deserialize_sex")]
+    pub sex: [u8; 2],
     pub cp: u8,
     pub trestbps: u16,
     pub chol: u16,
@@ -45,6 +47,18 @@ pub struct HeartData {
     pub ca: u8,
     pub thal: ThalKind,
     pub target: u8,
+}
+
+fn deserialize_sex<'de, D>(deserializer: D) -> Result<[u8; 2], D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let val = u8::deserialize(deserializer)?;
+    match val {
+        0 => Ok([1, 0]),
+        1 => Ok([0, 1]),
+        _ => Err(D::Error::custom("sex must be 0 or 1")),
+    }
 }
 
 pub fn read_heart_data(path: &Path) -> Result<Vec<HeartData>, csv::Error> {

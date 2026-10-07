@@ -6,7 +6,7 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
-burn = { workspace = true, features = ["flex", "autodiff"] }
+burn = { workspace = true, features = ["flex", "train", "tui"] }
 anyhow.workspace = true
 clap.workspace = true
 csv.workspace = true

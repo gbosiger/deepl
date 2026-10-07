@@ -16,7 +16,9 @@
 Used the notebook as the reference for the details. 
 Data manipulation is coded in pure Rust (with csv and serde for example). This is
 intentional in order to avoid learning some new framework (like Polars) in this stage.
-This also helps to compare how much data preparation code is needed for a simple example
+Also there are two executables for training, one manually coded and the second with Burn
+TUI.
+This helps to compare how much data preparation code is needed for a simple example
 and to understand implementation details needed for that.
 
 ## Running the example

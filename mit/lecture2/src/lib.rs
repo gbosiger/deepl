@@ -2,5 +2,5 @@
 pub mod batch;
 pub mod data;
 pub mod model;
-pub mod training;
 pub mod training_manual;
+pub mod training_tui;

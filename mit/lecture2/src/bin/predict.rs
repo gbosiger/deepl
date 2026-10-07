@@ -1,5 +1,5 @@
-use burn::{module::Module, record::DefaultRecorder};
-use lecture2::{data::read_normalization_params, model::ModelConfig};
+use burn::{module::Module, record::DefaultRecorder, tensor::backend::BackendTypes};
+use lecture2::{batch::HeartBatch, data::*, model::ModelConfig};
 use std::path::Path;
 
 type InferenceBackend = burn::backend::Flex;
@@ -21,6 +21,25 @@ fn main() -> anyhow::Result<()> {
     assert_eq!(model.num_params(), 497);
     println!("Loaded model and normalization");
     println!("{normalization:?}");
+
+    // Use the first CSV patient to check the saved-model prediction pipeline.
+    // Its target is not passed into the model; this is not a held-out evaluation.
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("data")
+        .join("heart.csv");
+    let patients = read_heart_data(&path)?;
+    let patient = patients
+        .first()
+        .ok_or_else(|| anyhow::anyhow!("Patient CSV is empty"))?;
+    let sample = vec![patient];
+    let normalized = normalize_heart_data(&sample, &normalization);
+    let encoded = encode_samples::<
+        <InferenceBackend as BackendTypes>::FloatElem,
+        <InferenceBackend as BackendTypes>::IntElem,
+    >(sample, normalized);
+    let batch = HeartBatch::<InferenceBackend>::from_encoded(encoded, &device)?;
+    let probability = model.forward(batch.inputs).into_scalar();
+    println!("First patient: predicted probability = {probability}");
 
     Ok(())
 }

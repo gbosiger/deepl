@@ -1,5 +1,5 @@
 use burn::{data::dataloader::DataLoaderBuilder, tensor::backend::BackendTypes};
-use lecture2::{batch::HeartBatcher, data::write_normalization_params, prep::prepare_data};
+use lecture2::{batcher::HeartBatcher, data::write_normalization_params, prep::prepare_data};
 use std::{path::Path, sync::Arc};
 
 type InferenceBackend = burn::backend::Flex;

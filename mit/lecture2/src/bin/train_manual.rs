@@ -9,7 +9,7 @@ use lecture2::common::{
     batch::HeartBatch,
     data::*,
     model::ModelConfig,
-    prep::{PreparedData, prepare_data},
+    prep::{prepare_data, PreparedData},
 };
 use std::path::Path;
 
@@ -104,7 +104,7 @@ fn main() -> anyhow::Result<()> {
     println!("Final test loss: {}", test_loss.into_scalar());
 
     // Finally we save the trained weights
-    let model_path = path_to_generated.clone().join("model");
+    let model_path = path_to_generated.join("model");
 
     model
         .valid()

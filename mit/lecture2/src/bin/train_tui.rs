@@ -1,9 +1,18 @@
-use burn::{data::dataloader::DataLoaderBuilder, tensor::backend::BackendTypes};
+use burn::{
+    data::dataloader::DataLoaderBuilder,
+    module::Module,
+    optim::AdamConfig,
+    record::DefaultRecorder,
+    tensor::backend::BackendTypes,
+    train::{
+        Learner, SupervisedTraining, metric::LossMetric, renderer::tui::TuiMetricsRendererWrapper,
+    },
+};
 use lecture2::{
-    common::{data::write_normalization_params, prep::prepare_data},
+    common::{data::write_normalization_params, model::ModelConfig, prep::prepare_data},
     trainer::batcher::HeartBatcher,
 };
-use std::{path::Path, sync::Arc};
+use std::{io::IsTerminal, path::Path, sync::Arc};
 
 type InferenceBackend = burn::backend::Flex;
 type TrainingBackend = burn::backend::Autodiff<InferenceBackend>;
@@ -36,12 +45,27 @@ fn main() -> anyhow::Result<()> {
     .num_workers(0)
     .build(validation);
 
-    // Check the loader output before connecting the trainer.
-    for batch in training_loader.iter() {
-        println!("Training batch: {:?}", batch.inputs.dims());
-    }
-    for batch in validation_loader.iter() {
-        println!("Validation batch: {:?}", batch.inputs.dims());
-    }
+    let device = Default::default();
+    let model = ModelConfig::new(29, 16).init::<TrainingBackend>(&device);
+    let optimizer = AdamConfig::new().init();
+
+    let training = SupervisedTraining::new(&output, training_loader, validation_loader)
+        .metrics((LossMetric::<InferenceBackend>::new(),))
+        .num_epochs(20);
+
+    // Keep the finished graph open until I close it; redirected output stays plain.
+    let training = if std::io::stdout().is_terminal() {
+        let renderer = TuiMetricsRendererWrapper::new(training.interrupter(), None).persistent();
+        training.renderer(renderer)
+    } else {
+        training
+    };
+
+    let result = training.launch(Learner::new(model, optimizer, 0.001));
+
+    result
+        .model
+        .save_file(output.join("model"), &DefaultRecorder::new())?;
+
     Ok(())
 }

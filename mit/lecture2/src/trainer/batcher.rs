@@ -1,5 +1,5 @@
 // Here we implement a batcher as defined by Burn
-use crate::{batch::HeartBatch, data::EncodedData};
+use crate::common::{batch::HeartBatch, data::EncodedData};
 use burn::data::dataloader::batcher::Batcher;
 use burn::tensor::backend::Backend;
 use std::sync::Arc;

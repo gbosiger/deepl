@@ -1,7 +1,7 @@
-// Our manual batching appraoch
-use crate::data::EncodedData;
-use anyhow::{ensure, Result};
-use burn::tensor::{backend::Backend, ElementConversion, Int, Tensor, TensorData};
+//! Tensor batch representation shared by both training paths.
+use crate::common::data::EncodedData;
+use anyhow::{Result, ensure};
+use burn::tensor::{ElementConversion, Int, Tensor, TensorData, backend::Backend};
 
 #[derive(Debug, Clone)]
 pub struct HeartBatch<B: Backend> {
@@ -12,21 +12,6 @@ pub struct HeartBatch<B: Backend> {
 }
 
 impl<B: Backend> HeartBatch<B> {
-    /// Slice patient rows into mini-batches; the last batch may be smaller.
-    pub fn batches(&self, batch_size: usize) -> impl Iterator<Item = Self> + '_ {
-        assert!(batch_size > 0);
-        let [count, features] = self.inputs.dims();
-        assert_eq!(self.targets.dims(), [count, 1]);
-
-        (0..count).step_by(batch_size).map(move |start| {
-            let end = start.saturating_add(batch_size).min(count);
-            Self {
-                inputs: self.inputs.clone().slice([start..end, 0..features]),
-                targets: self.targets.clone().slice([start..end, 0..1]),
-            }
-        })
-    }
-
     /// Consume flat buffers to avoid cloning or flattening them again.
     pub fn from_encoded(
         data: EncodedData<B::FloatElem, B::IntElem>,

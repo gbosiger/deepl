@@ -332,17 +332,3 @@ pub fn read_normalization_params(path: &Path) -> Result<Normalization> {
     }
     Ok(normalization)
 }
-
-impl<F: Send + Sync, I: Send + Sync> burn::data::dataset::Dataset<usize> for EncodedData<F, I> {
-    fn get(&self, index: usize) -> Option<usize> {
-        if index < self.targets.len() {
-            Some(index)
-        } else {
-            None
-        }
-    }
-
-    fn len(&self) -> usize {
-        self.targets.len()
-    }
-}

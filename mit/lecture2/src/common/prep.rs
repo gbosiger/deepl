@@ -1,5 +1,5 @@
 //! Shared CSV preparation for both training approaches; no Burn types here.
-use crate::data::*;
+use crate::common::data::*;
 use num_traits::FromPrimitive;
 use std::path::Path;
 

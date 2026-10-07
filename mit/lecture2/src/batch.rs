@@ -3,7 +3,7 @@ use crate::data::EncodedData;
 use anyhow::{Result, ensure};
 use burn::tensor::{ElementConversion, Int, Tensor, TensorData, backend::Backend};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HeartBatch<B: Backend> {
     /// Shape: [batch size, 29].
     pub inputs: Tensor<B, 2>,

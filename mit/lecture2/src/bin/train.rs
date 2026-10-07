@@ -1,4 +1,7 @@
-use burn::{module::Module, tensor::Tensor};
+use burn::{
+    module::Module,
+    tensor::{Tensor, backend::BackendTypes},
+};
 use lecture2::data::*;
 use lecture2::model::ModelConfig;
 use std::path::Path;
@@ -45,29 +48,27 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Test samples: {}", testing_samples_normalized.len());
 
-    // Encode data
-    let encoded_training_data: Vec<EncodedData> = training_samples
-        .into_iter()
-        .zip(training_samples_normalized.iter())
-        .map(|(raw, norm)| encode_data(raw, norm))
-        .collect();
-
-    let encoded_validation_data: Vec<EncodedData> = validation_samples
-        .into_iter()
-        .zip(validation_samples_normalized.iter())
-        .map(|(raw, norm)| encode_data(raw, norm))
-        .collect();
-
-    let encoded_testing_data: Vec<EncodedData> = testing_samples
-        .into_iter()
-        .zip(testing_samples_normalized.iter())
-        .map(|(raw, norm)| encode_data(raw, norm))
-        .collect();
+    // Encode each split into flat, backend-independent buffers.
+    let encoded_training_data = encode_samples::<
+        <Backend as BackendTypes>::FloatElem,
+        <Backend as BackendTypes>::IntElem,
+    >(training_samples, training_samples_normalized);
+    let encoded_validation_data = encode_samples::<
+        <Backend as BackendTypes>::FloatElem,
+        <Backend as BackendTypes>::IntElem,
+    >(validation_samples, validation_samples_normalized);
+    let encoded_testing_data = encode_samples::<
+        <Backend as BackendTypes>::FloatElem,
+        <Backend as BackendTypes>::IntElem,
+    >(testing_samples, testing_samples_normalized);
 
     // Print sample sizes - hopefully they match the ones above
-    println!("Training samples: {}", encoded_training_data.len());
-    println!("Validation samples: {}", encoded_validation_data.len());
-    println!("Test samples: {}", encoded_testing_data.len());
+    println!("Training samples: {}", encoded_training_data.targets.len());
+    println!(
+        "Validation samples: {}",
+        encoded_validation_data.targets.len()
+    );
+    println!("Test samples: {}", encoded_testing_data.targets.len());
 
     // We need to store normalization values to be used with the model later
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))

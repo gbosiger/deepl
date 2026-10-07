@@ -1,10 +1,11 @@
-use anyhow::{ensure, Result};
+use anyhow::{Result, ensure};
+use num_traits::FromPrimitive;
 use rand::seq::SliceRandom;
-use rand::{rngs::StdRng, SeedableRng};
-use serde::de::Error;
+use rand::{SeedableRng, rngs::StdRng};
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
+use serde::de::Error;
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -219,11 +220,7 @@ pub fn fit_normalization(data: &[&HeartData]) -> Normalization {
         .map(|sum| {
             let std_dev = (sum / data.len() as f64).sqrt();
             // Constant features normalize to zero without division by zero.
-            if std_dev == 0.0 {
-                1.0
-            } else {
-                std_dev
-            }
+            if std_dev == 0.0 { 1.0 } else { std_dev }
         });
 
     Normalization { means, std_devs }
@@ -249,46 +246,46 @@ pub fn normalize_heart_data(
 }
 
 #[derive(Debug)]
-pub struct EncodedData {
-    pub(crate) input: [f64; 29],
-    pub(crate) target: f64,
+pub struct EncodedData<F, I> {
+    pub inputs: Vec<F>,
+    pub targets: Vec<I>,
 }
 
-pub fn encode_data(raw: &HeartData, normalized: &HeartNormalizedData) -> EncodedData {
-    EncodedData {
-        input: [
-            normalized.age,
-            normalized.trestbps,
-            normalized.chol,
-            normalized.thalach,
-            normalized.oldpeak,
-            normalized.slope,
-            f64::from(raw.sex[0]),
-            f64::from(raw.sex[1]),
-            f64::from(raw.cp[0]),
-            f64::from(raw.cp[1]),
-            f64::from(raw.cp[2]),
-            f64::from(raw.cp[3]),
-            f64::from(raw.cp[4]),
-            f64::from(raw.fbs[0]),
-            f64::from(raw.fbs[1]),
-            f64::from(raw.restecg[0]),
-            f64::from(raw.restecg[1]),
-            f64::from(raw.restecg[2]),
-            f64::from(raw.exang[0]),
-            f64::from(raw.exang[1]),
-            f64::from(raw.ca[0]),
-            f64::from(raw.ca[1]),
-            f64::from(raw.ca[2]),
-            f64::from(raw.ca[3]),
-            f64::from(raw.thal[0]),
-            f64::from(raw.thal[1]),
-            f64::from(raw.thal[2]),
-            f64::from(raw.thal[3]),
-            f64::from(raw.thal[4]),
-        ],
-        target: f64::from(raw.target),
+pub fn encode_samples<F, I>(
+    raw: Vec<&HeartData>,
+    normalized: Vec<HeartNormalizedData>,
+) -> EncodedData<F, I>
+where
+    F: FromPrimitive + From<u8>,
+    I: From<u8>,
+{
+    assert_eq!(raw.len(), normalized.len());
+    let mut result = EncodedData {
+        inputs: Vec::with_capacity(29 * raw.len()),
+        targets: Vec::with_capacity(raw.len()),
+    };
+    for (raw, normalized) in raw.into_iter().zip(normalized) {
+        result.inputs.extend(
+            [
+                normalized.age,
+                normalized.trestbps,
+                normalized.chol,
+                normalized.thalach,
+                normalized.oldpeak,
+                normalized.slope,
+            ]
+            .map(|value| F::from_f64(value).expect("Normalized input must be convertible")),
+        );
+        result.inputs.extend(raw.sex.map(F::from));
+        result.inputs.extend(raw.cp.map(F::from));
+        result.inputs.extend(raw.fbs.map(F::from));
+        result.inputs.extend(raw.restecg.map(F::from));
+        result.inputs.extend(raw.exang.map(F::from));
+        result.inputs.extend(raw.ca.map(F::from));
+        result.inputs.extend(raw.thal.map(F::from));
+        result.targets.push(I::from(raw.target));
     }
+    result
 }
 
 // This order matches the numeric arrays used during normalization.

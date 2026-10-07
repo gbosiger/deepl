@@ -1,8 +1,4 @@
-use burn::{
-    module::Module,
-    nn::loss::BinaryCrossEntropyLossConfig,
-    tensor::{backend::BackendTypes, Tensor},
-};
+use burn::{nn::loss::BinaryCrossEntropyLossConfig, tensor::backend::BackendTypes};
 use lecture2::model::ModelConfig;
 use lecture2::{batch::HeartBatch, data::*};
 use std::path::Path;
@@ -83,7 +79,7 @@ fn main() -> anyhow::Result<()> {
     // Prepare the training data batch and a loss function config
     let batch = HeartBatch::<Backend>::from_encoded(encoded_training_data, &device)?;
 
-    // We calculate by exposing logits as precision is better then after sigmoid
+    // We calculate by exposing logits as precision is better than after sigmoid
     let loss_function = BinaryCrossEntropyLossConfig::new()
         .with_logits(true)
         .init::<Backend>(&device);
@@ -93,12 +89,66 @@ fn main() -> anyhow::Result<()> {
     println!("Loss: {}", loss.into_scalar());
 
     /*
-    // The model has random weights, so these probabilities aren't useful predictions yet.
-    let probabilities = output.into_data().to_vec::<f32>()?;
-    assert!(probabilities.iter().all(|p| (0.0..=1.0).contains(p)));
+    Notes: what training looks like by hand.
+    If I try this, replace the model/batch/loss code above. The encoded data
+    needs to still be available, since creating a batch consumes its buffers.
 
-    // Print probabilities from random weights
-    println!("Probabilities: {:?}", probabilities);
+    Repeat: predict -> calculate loss -> backward -> update weights.
+    Burn's trainer can handle the loop, progress display, and checkpoints later.
+
+    use burn::optim::{AdamConfig, GradientsParams, Optimizer};
+    use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
+
+    type TrainingBackend = burn::backend::Autodiff<Backend>;
+    let device = Default::default();
+    let mut model = ModelConfig::new(29, 16).init::<TrainingBackend>(&device);
+    let mut optimizer = AdamConfig::new().init();
+    let loss_function = BinaryCrossEntropyLossConfig::new()
+        .with_logits(true)
+        .init::<TrainingBackend>(&device);
+
+    let mut indices: Vec<usize> = (0..encoded_training_data.targets.len()).collect();
+    let mut rng = StdRng::seed_from_u64(42);
+    let batch_size = 32;
+    let learning_rate = 0.001;
+
+    for epoch in 0..300 {
+        // One epoch = go through all training patients. Shuffle again each time.
+        indices.shuffle(&mut rng);
+        let mut total_loss = 0.0;
+
+        for rows in indices.chunks(batch_size) {
+            // Pick the rows for this batch. Each patient has 29 values in the flat buffer.
+            let mut encoded = EncodedData {
+                inputs: Vec::with_capacity(rows.len() * 29),
+                targets: Vec::with_capacity(rows.len()),
+            };
+            for &i in rows {
+                encoded.inputs.extend_from_slice(
+                    &encoded_training_data.inputs[i * 29..(i + 1) * 29],
+                );
+                encoded.targets.push(encoded_training_data.targets[i]);
+            }
+            let batch = HeartBatch::<TrainingBackend>::from_encoded(encoded, &device)?;
+
+            // Get logits, then compare with the actual answers.
+            let logits = model.logits(batch.inputs);
+            let loss = loss_function.forward(logits, batch.targets);
+            // Clone here: printing the scalar consumes it, but I still need backward.
+            total_loss += f64::from(loss.clone().into_scalar()) * rows.len() as f64;
+
+            // Find how the weights affect the loss.
+            let gradients = GradientsParams::from_grads(loss.backward(), &model);
+            // Adam adjusts the weights and gives back the updated model.
+            model = optimizer.step(learning_rate, model, gradients);
+        }
+
+        // Average over patients, not batches: the last batch is smaller.
+        println!("Epoch {}: training loss {}", epoch + 1,
+            total_loss / indices.len() as f64);
+        // Check validation here, but do not update weights.
+        // Once training is done: check test data and save the model.
+    }
     */
 
     Ok(())

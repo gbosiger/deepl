@@ -100,18 +100,25 @@ pub fn run() -> anyhow::Result<()> {
         .init::<InferenceBackend>(&device);
 
     for epoch in 0..20 {
-        // Prepare input and calculate the loss based on the training samples
-        let logits = model.logits(training_batch.inputs.clone());
-        let loss = loss_function.forward(logits, training_batch.targets.clone());
+        for (i, batch) in training_batch.batches(32).enumerate() {
+            // Prepare input and calculate the loss based on the training samples
+            let logits = model.logits(batch.inputs);
+            let loss = loss_function.forward(logits, batch.targets);
 
-        let loss_value = loss.clone().into_scalar();
-        println!("Epoch: {}: loss {}", epoch + 1, loss_value);
+            let loss_value = loss.clone().into_scalar();
+            println!(
+                "Epoch: {}, batch: {}: training loss {}",
+                epoch + 1,
+                i + 1,
+                loss_value
+            );
 
-        // Calculate gradients
-        let gradients = GradientsParams::from_grads(loss.backward(), &model);
+            // Calculate gradients
+            let gradients = GradientsParams::from_grads(loss.backward(), &model);
 
-        // Update the model based on calculated gradients
-        model = optimizer.step(0.001, model, gradients);
+            // Update the model based on calculated gradients
+            model = optimizer.step(0.001, model, gradients);
+        }
 
         // Now we use the updated model to check what we get with validation batch, but we do not
         // update the model

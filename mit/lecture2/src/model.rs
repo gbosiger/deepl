@@ -2,8 +2,8 @@ use burn::{
     config::Config,
     module::Module,
     nn::{Linear, LinearConfig, Relu, Sigmoid},
-    tensor::backend::Backend,
     tensor::Tensor,
+    tensor::backend::Backend,
 };
 
 #[derive(Config, Debug)]

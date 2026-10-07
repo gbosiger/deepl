@@ -16,8 +16,12 @@ serde.workspace = true
 serde_json.workspace = true
 
 [[bin]]
-name = "train"
-path = "src/bin/train.rs"
+name = "train_manual"
+path = "src/bin/train_manual.rs"
+
+[[bin]]
+name = "train_tui"
+path = "src/bin/train_tui.rs"
 
 [[bin]]
 name = "predict"

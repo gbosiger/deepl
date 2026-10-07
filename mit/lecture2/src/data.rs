@@ -1,11 +1,11 @@
-use anyhow::{ensure, Result};
+use anyhow::{Result, ensure};
 use num_traits::FromPrimitive;
 use rand::seq::SliceRandom;
-use rand::{rngs::StdRng, SeedableRng};
-use serde::de::Error;
+use rand::{SeedableRng, rngs::StdRng};
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
+use serde::de::Error;
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -220,11 +220,7 @@ pub fn fit_normalization(data: &[&HeartData]) -> Normalization {
         .map(|sum| {
             let std_dev = (sum / data.len() as f64).sqrt();
             // Constant features normalize to zero without division by zero.
-            if std_dev == 0.0 {
-                1.0
-            } else {
-                std_dev
-            }
+            if std_dev == 0.0 { 1.0 } else { std_dev }
         });
 
     Normalization { means, std_devs }
@@ -335,4 +331,18 @@ pub fn read_normalization_params(path: &Path) -> Result<Normalization> {
         normalization.std_devs[i] = row.std_dev;
     }
     Ok(normalization)
+}
+
+impl<F: Send + Sync, I: Send + Sync> burn::data::dataset::Dataset<usize> for EncodedData<F, I> {
+    fn get(&self, index: usize) -> Option<usize> {
+        if index < self.targets.len() {
+            Some(index)
+        } else {
+            None
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.targets.len()
+    }
 }

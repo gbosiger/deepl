@@ -7,16 +7,22 @@ type InferenceBackend = burn::backend::Flex;
 fn main() -> anyhow::Result<()> {
     let generated = Path::new(env!("CARGO_MANIFEST_DIR")).join("generated");
 
-    let normalization = read_normalization_params(&generated.join("normalization_manual.csv"))?;
+    // New runs use their own directory; older saved manual models still load.
+    let manual = generated.join("manual");
+    let (normalization_path, model_path) = if manual.join("model.mpk").exists() {
+        (manual.join("normalization.csv"), manual.join("model"))
+    } else {
+        (
+            generated.join("normalization_manual.csv"),
+            generated.join("model_manual"),
+        )
+    };
+    let normalization = read_normalization_params(&normalization_path)?;
 
     let device = Default::default();
     let model = ModelConfig::new(29, 16)
         .init::<InferenceBackend>(&device)
-        .load_file(
-            generated.join("model_manual"),
-            &DefaultRecorder::new(),
-            &device,
-        )?;
+        .load_file(model_path, &DefaultRecorder::new(), &device)?;
 
     assert_eq!(model.num_params(), 497);
     println!("Loaded model and normalization");

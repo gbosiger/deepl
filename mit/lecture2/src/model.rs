@@ -8,3 +8,18 @@
 // TODO 6: Check that a batch of inputs produces one probability per input.
 // TODO 7: Verify the model has 497 trainable parameters.
 // TODO 8: Decide how to expose logits for a numerically stable training loss.
+
+use burn::{
+    module::Module,
+    nn::{Linear, Relu, Sigmoid},
+    tensor::Tensor,
+};
+
+#[derive(Module, Debug)]
+pub struct Model {
+    linear_input: Linear,
+    hidden: Linear,
+    linear_output: Linear,
+    activation: Relu,
+    end: Sigmoid,
+}

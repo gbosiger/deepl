@@ -1,3 +1,4 @@
+use anyhow::{ensure, Result};
 use rand::seq::SliceRandom;
 use rand::{rngs::StdRng, SeedableRng};
 use serde::de::Error;
@@ -249,8 +250,8 @@ pub fn normalize_heart_data(
 
 #[derive(Debug)]
 pub struct EncodedData {
-    input: [f64; 29],
-    target: f64,
+    pub(crate) input: [f64; 29],
+    pub(crate) target: f64,
 }
 
 pub fn encode_data(raw: &HeartData, normalized: &HeartNormalizedData) -> EncodedData {
@@ -301,10 +302,7 @@ struct NormalizationRow {
     std_dev: f64,
 }
 
-pub fn write_normalization_params(
-    path: &Path,
-    normalization: &Normalization,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_normalization_params(path: &Path, normalization: &Normalization) -> Result<()> {
     let mut writer = csv::Writer::from_path(path)?;
     for (i, feature) in NUMERIC_FEATURES.iter().enumerate() {
         writer.serialize(NormalizationRow {
@@ -317,12 +315,14 @@ pub fn write_normalization_params(
     Ok(())
 }
 
-pub fn read_normalization_params(path: &Path) -> Result<Normalization, Box<dyn std::error::Error>> {
+pub fn read_normalization_params(path: &Path) -> Result<Normalization> {
     let mut reader = csv::Reader::from_path(path)?;
     let rows: Vec<NormalizationRow> = reader.deserialize().collect::<Result<_, _>>()?;
-    if rows.len() != 6 {
-        return Err("Normalization CSV must contain exactly six rows".into());
-    }
+
+    ensure!(
+        rows.len() == 6,
+        "Normalization CSV must contain exactly six rows"
+    );
 
     // Fixed order: age, trestbps, chol, thalach, oldpeak, slope.
     let mut normalization = Normalization {

@@ -99,13 +99,14 @@ pub fn run() -> anyhow::Result<()> {
         .with_logits(true)
         .init::<InferenceBackend>(&device);
 
+    // Train and calculate validation loss
     for epoch in 0..20 {
         for (i, batch) in training_batch.batches(32).enumerate() {
             // Prepare input and calculate the loss based on the training samples
             let logits = model.logits(batch.inputs);
-            let loss = loss_function.forward(logits, batch.targets);
+            let training_loss = loss_function.forward(logits, batch.targets);
 
-            let loss_value = loss.clone().into_scalar();
+            let loss_value = training_loss.clone().into_scalar();
             println!(
                 "Epoch: {}, batch: {}: training loss {}",
                 epoch + 1,
@@ -114,7 +115,7 @@ pub fn run() -> anyhow::Result<()> {
             );
 
             // Calculate gradients
-            let gradients = GradientsParams::from_grads(loss.backward(), &model);
+            let gradients = GradientsParams::from_grads(training_loss.backward(), &model);
 
             // Update the model based on calculated gradients
             model = optimizer.step(0.001, model, gradients);
@@ -135,6 +136,15 @@ pub fn run() -> anyhow::Result<()> {
         let loss_value = loss.clone().into_scalar();
         println!("Epoch: {}: validation loss {}", epoch + 1, loss_value);
     }
+
+    // Now we use the third, testing, batch and take the trained model and calculate the loss
+    let testing_batch =
+        HeartBatch::<InferenceBackend>::from_encoded(encoded_testing_data, &device)?;
+    let testing_model = model.valid();
+    let logits = testing_model.logits(testing_batch.inputs);
+    let test_loss = validation_loss_function.forward(logits, testing_batch.targets);
+
+    println!("Final test loss: {}", test_loss.into_scalar());
 
     Ok(())
 }

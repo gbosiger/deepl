@@ -1,5 +1,6 @@
 use burn::{
     module::Module,
+    nn::loss::BinaryCrossEntropyLossConfig,
     tensor::{backend::BackendTypes, Tensor},
 };
 use lecture2::model::ModelConfig;
@@ -79,15 +80,26 @@ fn main() -> anyhow::Result<()> {
     let model_config = ModelConfig::new(29, 16);
     let model = model_config.init::<Backend>(&device);
 
+    // Prepare the training data batch and a loss function config
     let batch = HeartBatch::<Backend>::from_encoded(encoded_training_data, &device)?;
-    let output = model.forward(batch.inputs);
 
+    // We calculate by exposing logits as precision is better then after sigmoid
+    let loss_function = BinaryCrossEntropyLossConfig::new()
+        .with_logits(true)
+        .init::<Backend>(&device);
+    let logits = model.logits(batch.inputs);
+    let loss = loss_function.forward(logits, batch.targets);
+
+    println!("Loss: {}", loss.into_scalar());
+
+    /*
     // The model has random weights, so these probabilities aren't useful predictions yet.
     let probabilities = output.into_data().to_vec::<f32>()?;
     assert!(probabilities.iter().all(|p| (0.0..=1.0).contains(p)));
 
     // Print probabilities from random weights
     println!("Probabilities: {:?}", probabilities);
+    */
 
     Ok(())
 }

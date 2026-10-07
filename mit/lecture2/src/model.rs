@@ -10,16 +10,33 @@
 // TODO 8: Decide how to expose logits for a numerically stable training loss.
 
 use burn::{
+    config::Config,
     module::Module,
-    nn::{Linear, Relu, Sigmoid},
-    tensor::Tensor,
+    nn::{Linear, LinearConfig, Relu, Sigmoid},
+    tensor::backend::Backend,
 };
 
+#[derive(Config, Debug)]
+pub struct ModelConfig {
+    input_size: usize,
+    hidden_size: usize,
+}
+
 #[derive(Module, Debug)]
-pub struct Model {
-    linear_input: Linear,
-    hidden: Linear,
-    linear_output: Linear,
+pub struct Model<B: Backend> {
+    hidden: Linear<B>,
+    linear_output: Linear<B>,
     activation: Relu,
     end: Sigmoid,
+}
+
+impl ModelConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> Model<B> {
+        Model {
+            hidden: LinearConfig::new(self.input_size, self.hidden_size).init(device),
+            linear_output: LinearConfig::new(self.hidden_size, 1).init(device),
+            activation: Relu::new(),
+            end: Sigmoid::new(),
+        }
+    }
 }

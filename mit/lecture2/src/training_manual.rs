@@ -1,14 +1,17 @@
 use crate::{batch::HeartBatch, data::*, model::ModelConfig};
 use burn::{
+    module::AutodiffModule,
     nn::loss::BinaryCrossEntropyLossConfig,
     optim::{AdamConfig, GradientsParams, Optimizer},
     tensor::backend::BackendTypes,
 };
 use std::path::Path;
 
-type Backend = burn::backend::Autodiff<burn::backend::Flex>;
-type FloatElem = <Backend as BackendTypes>::FloatElem;
-type IntElem = <Backend as BackendTypes>::IntElem;
+type InferenceBackend = burn::backend::Flex;
+// When training we need to have gradient tracking to build the graph, needed for backpropagation
+type TrainingBackend = burn::backend::Autodiff<InferenceBackend>;
+type FloatElem = <TrainingBackend as BackendTypes>::FloatElem;
+type IntElem = <TrainingBackend as BackendTypes>::IntElem;
 
 pub fn run() -> anyhow::Result<()> {
     // Load data
@@ -74,31 +77,57 @@ pub fn run() -> anyhow::Result<()> {
     write_normalization_params(&path, &normalization)
         .expect("Storing of normalization params failed");
 
-    // Create device, model and an optimizer
+    // Create device, model and an optimizer for the training
     let device = Default::default();
-    let mut model = ModelConfig::new(29, 16).init::<Backend>(&device);
+    let mut model = ModelConfig::new(29, 16).init::<TrainingBackend>(&device);
     // This optimizer remembers previous steps, this is why it is created outside the training loop
-    let mut optimizer = AdamConfig::new().init::<Backend, crate::model::Model<Backend>>();
+    let mut optimizer =
+        AdamConfig::new().init::<TrainingBackend, crate::model::Model<TrainingBackend>>();
 
+    // Prepare training batch and loss function
+    let training_batch =
+        HeartBatch::<TrainingBackend>::from_encoded(encoded_training_data, &device)?;
     // We calculate by exposing logits as precision is better than after sigmoid
     let loss_function = BinaryCrossEntropyLossConfig::new()
         .with_logits(true)
-        .init::<Backend>(&device);
+        .init::<TrainingBackend>(&device);
 
-    let batch = HeartBatch::<Backend>::from_encoded(encoded_training_data, &device)?;
+    // Prepare validation batch and loss function
+    let validation_batch =
+        HeartBatch::<InferenceBackend>::from_encoded(encoded_validation_data, &device)?;
+    let validation_loss_function = BinaryCrossEntropyLossConfig::new()
+        .with_logits(true)
+        .init::<InferenceBackend>(&device);
 
-    let logits = model.logits(batch.inputs.clone());
-    let loss = loss_function.forward(logits, batch.targets.clone());
+    for epoch in 0..20 {
+        // Prepare input and calculate the loss based on the training samples
+        let logits = model.logits(training_batch.inputs.clone());
+        let loss = loss_function.forward(logits, training_batch.targets.clone());
 
-    println!("Before: {}", loss.clone().into_scalar());
+        let loss_value = loss.clone().into_scalar();
+        println!("Epoch: {}: loss {}", epoch + 1, loss_value);
 
-    let gradients = GradientsParams::from_grads(loss.backward(), &model);
-    model = optimizer.step(0.001, model, gradients);
+        // Calculate gradients
+        let gradients = GradientsParams::from_grads(loss.backward(), &model);
 
-    let logits = model.logits(batch.inputs);
-    let loss_after = loss_function.forward(logits, batch.targets);
+        // Update the model based on calculated gradients
+        model = optimizer.step(0.001, model, gradients);
 
-    println!("After: {}", loss_after.into_scalar());
+        // Now we use the updated model to check what we get with validation batch, but we do not
+        // update the model
+        // This allows us to compare how loss changes between the training and validation batches
+        // If training and validation loss both fall, great, if training loss falls while
+        // validation loss rises, we could be overfitting
+        // valid() gives you the current model without gradient tracking
+        let validation_model = model.valid();
+
+        // Prepare input and calculate the loss based on the training samples
+        let logits = validation_model.logits(validation_batch.inputs.clone());
+        let loss = validation_loss_function.forward(logits, validation_batch.targets.clone());
+
+        let loss_value = loss.clone().into_scalar();
+        println!("Epoch: {}: validation loss {}", epoch + 1, loss_value);
+    }
 
     Ok(())
 }

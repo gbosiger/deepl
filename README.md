@@ -1,7 +1,8 @@
-# Hands on Deep Learning with Burn
+# My Hands on Deep Learning with Burn playground
 
 A Cargo workspace with one package per exercise that I do for learning using
-various sources.
+various sources. I work with agents, but not outsource main work to them in
+order to learn different details.
 
 The root Cargo.toml is a virtual workspace: it has no executable of its own.
 `[workspace.dependencies]` centralizes dependency versions. Each package opts in

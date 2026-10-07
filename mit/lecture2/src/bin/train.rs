@@ -1,12 +1,14 @@
 use burn::{
     module::Module,
-    tensor::{Tensor, backend::BackendTypes},
+    tensor::{backend::BackendTypes, Tensor},
 };
-use lecture2::data::*;
 use lecture2::model::ModelConfig;
+use lecture2::{batch::HeartBatch, data::*};
 use std::path::Path;
 
 type Backend = burn::backend::Flex;
+type FloatElem = <Backend as BackendTypes>::FloatElem;
+type IntElem = <Backend as BackendTypes>::IntElem;
 
 fn main() -> anyhow::Result<()> {
     // Load data
@@ -48,19 +50,14 @@ fn main() -> anyhow::Result<()> {
     );
     println!("Test samples: {}", testing_samples_normalized.len());
 
-    // Encode each split into flat, backend-independent buffers.
-    let encoded_training_data = encode_samples::<
-        <Backend as BackendTypes>::FloatElem,
-        <Backend as BackendTypes>::IntElem,
-    >(training_samples, training_samples_normalized);
-    let encoded_validation_data = encode_samples::<
-        <Backend as BackendTypes>::FloatElem,
-        <Backend as BackendTypes>::IntElem,
-    >(validation_samples, validation_samples_normalized);
-    let encoded_testing_data = encode_samples::<
-        <Backend as BackendTypes>::FloatElem,
-        <Backend as BackendTypes>::IntElem,
-    >(testing_samples, testing_samples_normalized);
+    // Encode each split into flat buffers, use types from the Backend (for direct Tensor creation
+    // later)
+    let encoded_training_data =
+        encode_samples::<FloatElem, IntElem>(training_samples, training_samples_normalized);
+    let encoded_validation_data =
+        encode_samples::<FloatElem, IntElem>(validation_samples, validation_samples_normalized);
+    let encoded_testing_data =
+        encode_samples::<FloatElem, IntElem>(testing_samples, testing_samples_normalized);
 
     // Print sample sizes - hopefully they match the ones above
     println!("Training samples: {}", encoded_training_data.targets.len());
@@ -82,11 +79,8 @@ fn main() -> anyhow::Result<()> {
     let model_config = ModelConfig::new(29, 16);
     let model = model_config.init::<Backend>(&device);
 
-    let input = Tensor::<Backend, 2>::zeros([2, 29], &device);
-    let output = model.forward(input);
-
-    assert_eq!(output.dims(), [2, 1]);
-    assert_eq!(model.num_params(), 497);
+    let batch = HeartBatch::<Backend>::from_encoded(encoded_training_data, &device)?;
+    let output = model.forward(batch.inputs);
 
     // The model has random weights, so these probabilities aren't useful predictions yet.
     let probabilities = output.into_data().to_vec::<f32>()?;

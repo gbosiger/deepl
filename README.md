@@ -1,4 +1,4 @@
-# My Hands on Deep Learning with Burn playground
+# My Hands on Deep Learning with Rust + Burn
 
 A Cargo workspace with one package per exercise that I do for learning using
 various sources. I work with agents, but not outsource main work to them in

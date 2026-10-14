@@ -6,7 +6,7 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
-burn = { workspace = true, features = ["cuda", "train", "tui"] }
+burn = { workspace = true, features = ["flex", "train", "tui"] }
 anyhow.workspace = true
 clap.workspace = true
 

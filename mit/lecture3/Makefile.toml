@@ -1,0 +1,25 @@
+[tasks.download-data]
+description = "Download and decompress Fashion-MNIST"
+command = "bash"
+args = ["-euc", '''
+mkdir -p data
+
+base="https://raw.githubusercontent.com/zalandoresearch/fashion-mnist/master/data/fashion"
+
+for name in \
+    train-images-idx3-ubyte \
+    train-labels-idx1-ubyte \
+    t10k-images-idx3-ubyte \
+    t10k-labels-idx1-ubyte
+do
+    if [ ! -f "data/$name.gz" ]; then
+        curl --fail --location "$base/$name.gz" \
+            --output "data/$name.gz.part"
+        mv "data/$name.gz.part" "data/$name.gz"
+    fi
+
+    if [ ! -f "data/$name" ]; then
+        gzip -dk "data/$name.gz"
+    fi
+done
+''']

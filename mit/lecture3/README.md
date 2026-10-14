@@ -68,31 +68,76 @@ Possible module responsibilities when you get there: common data/preparation/mod
 trainer dataset/batcher/steps, and train/predict executable entry points. Create
 files as each milestone needs them; no empty hierarchy is required upfront.
 
+## Dataset setup
+
+Use the official Fashion-MNIST compressed IDX files from
+[Zalando's repository](https://github.com/zalandoresearch/fashion-mnist/tree/master/data/fashion).
+Burn 0.21.0's built-in `MnistDataset` loads handwritten digits, not Fashion-MNIST.
+
+The download task in `Makefile.toml` uses **cargo-make**, an external Cargo task
+runner, not a Rust library dependency. Install it once:
+
+```sh
+cargo install cargo-make --locked
+```
+
+The task also requires `bash`, `curl`, and `gzip` on your PATH. From the workspace
+root, run:
+
+```sh
+cargo make --cwd mit/lecture3 --no-workspace download-data
+```
+
+`--cwd` selects lecture 3's task file and data directory. `--no-workspace`
+prevents cargo-make from running the task across all workspace members (lecture 2
+does not define this task). If already inside `mit/lecture3`, use
+`cargo make --no-workspace download-data` instead.
+
+It downloads these four files into lecture-local `data/`:
+
+- `train-images-idx3-ubyte.gz` — 60,000 development images.
+- `train-labels-idx1-ubyte.gz` — matching development labels.
+- `t10k-images-idx3-ubyte.gz` — 10,000 official test images.
+- `t10k-labels-idx1-ubyte.gz` — matching test labels.
+
+The task decompresses each file with `gzip -dk`, keeping the original `.gz` file
+alongside its uncompressed IDX file. Existing downloads and uncompressed files
+are skipped. The entire `mit/lecture3/data/` directory is ignored by Git.
+
+This is an explicit setup step, not a build dependency: compiling, training, and
+prediction should not silently download data. The Rust loader will read the
+uncompressed IDX files using standard-library file I/O; no gzip dependency is
+needed in the crate. IDX headers and payloads still need decoding and validation.
+
+The current task does not verify checksums. Compare the compressed files against
+the checksums in the official dataset README before trusting them; merely finding
+an existing file does not validate its contents.
+
 ## Learning checklist
 
 ### 1. Workspace and experiment contract
 
-- [ ] Add lecture 3 to the workspace when its first executable exists.
-- [ ] Review the existing manifest: it currently calls the training binary
+- [x] Add lecture 3 to the workspace when its first executable exists.
+- [x] Review the existing manifest: it currently calls the training binary
       `train_manual` but points at `src/bin/train.rs`. Choose a consistent name
       for the trainer path before writing it.
-- [ ] Decide initial backend (CPU for correctness), executable names, dataset
+- [x] Decide initial backend (CPU for correctness), executable names, dataset
       source, and output location. Record Burn/Rust versions.
-- [ ] Write down input layout, output layout, label mapping, and preprocessing.
-- [ ] Keep existing lecture 2 code and artifacts separate.
+- [x] Write down input layout, output layout, label mapping, and preprocessing.
+- [x] Keep existing lecture 2 code and artifacts separate.
 
 Done when: the package and naming decisions are clear, and the first tiny executable
 can be built without introducing unrelated abstractions.
 
 ### 2. Acquire and inspect the data
 
-- [ ] Choose Burn’s Fashion-MNIST loader if supported by the installed version,
+- [x] Choose Burn’s Fashion-MNIST loader if supported by the installed version,
       or the official compressed IDX files. Verify that you are loading
       **Fashion-MNIST**, not the similarly shaped handwritten-digit MNIST data.
-- [ ] Keep original data unchanged. Record source, file checksums where available,
+- [x] Keep original data unchanged. Record source, file checksums where available,
       and how cached data is found; avoid hidden downloads during prediction.
-- [ ] Inspect dimensions, image/label counts, class counts, and label range.
-- [ ] If decoding IDX yourself, validate its header, dimensions, payload length,
+- [x] Inspect dimensions, image/label counts, class counts, and label range.
+- [x] If decoding IDX yourself, validate its header, dimensions, payload length,
       and image/label alignment. IDX is a binary format, not CSV.
 - [ ] Display a small labeled image grid to check orientation and class meanings.
 

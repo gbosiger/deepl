@@ -1,5 +1,5 @@
 [workspace]
-members = ["mit/lecture2"]
+members = ["mit/lecture2", "mit/lecture3"]
 resolver = "3"
 
 [workspace.package]

@@ -1,0 +1,20 @@
+[package]
+name = "lecture3"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+burn = { workspace = true, features = ["cuda", "train", "tui"] }
+anyhow.workspace = true
+clap.workspace = true
+
+[[bin]]
+name = "train"
+path = "src/bin/train.rs"
+
+[[bin]]
+name = "predict"
+path = "src/bin/predict.rs"
+

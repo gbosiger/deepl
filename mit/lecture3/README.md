@@ -139,7 +139,7 @@ can be built without introducing unrelated abstractions.
 - [x] Inspect dimensions, image/label counts, class counts, and label range.
 - [x] If decoding IDX yourself, validate its header, dimensions, payload length,
       and image/label alignment. IDX is a binary format, not CSV.
-- [ ] Display a small labeled image grid to check orientation and class meanings.
+- [x] Display a small labeled image grid to check orientation and class meanings.
 
 Done when: all 70,000 examples are accounted for and a few images look correct.
 Do not download or implement a loader until you have chosen the source.

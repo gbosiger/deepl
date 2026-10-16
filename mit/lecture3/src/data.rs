@@ -181,7 +181,7 @@ pub fn export_pgm_image(
     images: &RawMnistImages,
     labels: &RawMnistLabels,
 ) -> Result<String> {
-    assert!(images.count == labels.count);
+    anyhow::ensure!(images.count == labels.count);
     anyhow::ensure!(idx < images.count, "Index invalid during image export");
 
     let label = label_code_to_str(labels.labels[idx]).unwrap();

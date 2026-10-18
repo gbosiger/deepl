@@ -9,6 +9,7 @@ publish.workspace = true
 burn = { workspace = true, features = ["flex", "train", "tui"] }
 anyhow.workspace = true
 clap.workspace = true
+flate2.workspace = true
 
 [[bin]]
 name = "train"

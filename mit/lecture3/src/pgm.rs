@@ -1,28 +1,33 @@
 use crate::dataset::RawMnistDataItems;
 use anyhow::{bail, Context, Result};
-use std::{fs::File, io::Write, path::Path};
+use burn::data::dataset::Dataset;
+use std::{
+    fs::{create_dir_all, File},
+    io::Write,
+    path::Path,
+};
 
-pub trait SavePgmFile {
-    fn save_file(&self, idx: usize, path: &Path) -> Result<String>;
+pub trait SavePgmImage {
+    fn save_file(&self, idx: usize, path: &Path) -> Result<()>;
 }
 
-impl SavePgmFile for RawMnistDataItems {
+impl SavePgmImage for RawMnistDataItems {
     // PGM supports grayscale pixels directly an no image library is needed
-    fn save_file(&self, idx: usize, path: &Path) -> Result<String> {
-        anyhow::ensure!(idx < self.count, "Index invalid during image export");
+    fn save_file(&self, idx: usize, path: &Path) -> Result<()> {
+        let item = self.get(idx).context(format!("Getting item {}", idx))?;
 
-        let label = label_code_to_str(self.labels[idx + Self::LABEL_HEADER_LEN]).unwrap();
-        let filename = format!("{}_{}.pgm", idx, label);
+        let label_str = label_code_to_str(item.label).unwrap();
+        let filename = format!("{}_{}.pgm", item.idx, label_str);
+
+        create_dir_all(path).context(format!("Creating directory {}", path.display()))?;
 
         let mut file = File::create(path.join(&filename))
             .context(format!("Creating pgm export file in {}", path.display()))?;
         write!(file, "P5\n{} {}\n255\n", self.cols, self.rows)?;
 
-        let image_size = self.rows * self.cols;
-        let start = (idx * image_size) + Self::IMAGE_HEADER_LEN;
-        file.write_all(&self.images[start..start + image_size])?;
+        file.write_all(&self.images[item.pixels])?;
 
-        Ok(filename)
+        Ok(())
     }
 }
 

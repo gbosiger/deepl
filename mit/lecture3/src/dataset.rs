@@ -16,6 +16,7 @@ pub struct RawMnistDataItems {
 
 pub struct RawMnistDataItem {
     pub pixels: Range<usize>,
+    pub idx: usize,
     pub label: u8,
 }
 
@@ -59,6 +60,7 @@ impl Dataset<RawMnistDataItem> for RawMnistDataItems {
 
         Some(RawMnistDataItem {
             pixels: pixel_start..pixel_end,
+            idx: index,
             label: self.labels[RawMnistDataItems::LABEL_HEADER_LEN + index],
         })
     }

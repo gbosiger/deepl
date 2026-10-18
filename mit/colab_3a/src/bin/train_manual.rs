@@ -5,7 +5,7 @@ use burn::{
     record::DefaultRecorder,
     tensor::backend::BackendTypes,
 };
-use lecture2::common::{
+use colab_3a::common::{
     batch::HeartBatch,
     data::*,
     model::ModelConfig,
@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
     let mut model = ModelConfig::new(29, 16).init::<TrainingBackend>(&device);
     // This optimizer remembers previous steps, this is why it is created outside the training loop
     let mut optimizer = AdamConfig::new()
-        .init::<TrainingBackend, lecture2::common::model::Model<TrainingBackend>>();
+        .init::<TrainingBackend, colab_3a::common::model::Model<TrainingBackend>>();
 
     // Prepare training batch and loss function
     let training_batch =

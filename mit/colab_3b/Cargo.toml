@@ -1,5 +1,5 @@
 [package]
-name = "lecture2"
+name = "colab_3b"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -9,20 +9,13 @@ publish.workspace = true
 burn = { workspace = true, features = ["flex", "train", "tui"] }
 anyhow.workspace = true
 clap.workspace = true
-csv.workspace = true
-num-traits.workspace = true
-rand.workspace = true
-serde.workspace = true
-serde_json.workspace = true
+flate2.workspace = true
 
 [[bin]]
-name = "train_manual"
-path = "src/bin/train_manual.rs"
-
-[[bin]]
-name = "train_tui"
-path = "src/bin/train_tui.rs"
+name = "train"
+path = "src/bin/train.rs"
 
 [[bin]]
 name = "predict"
 path = "src/bin/predict.rs"
+

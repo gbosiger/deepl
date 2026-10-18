@@ -1161,6 +1161,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "colab_3a"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "burn",
+ "clap",
+ "csv",
+ "num-traits",
+ "rand 0.9.5",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "colab_3b"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "burn",
+ "clap",
+ "flate2",
+]
+
+[[package]]
 name = "color_quant"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3405,30 +3429,6 @@ name = "lebe"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a79a3332a6609480d7d0c9eab957bca6b455b91bb84e66d19f5ff66294b85b8"
-
-[[package]]
-name = "lecture2"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "burn",
- "clap",
- "csv",
- "num-traits",
- "rand 0.9.5",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "lecture3"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "burn",
- "clap",
- "flate2",
-]
 
 [[package]]
 name = "libc"

@@ -5,10 +5,10 @@ use burn::{
     record::DefaultRecorder,
     tensor::backend::BackendTypes,
     train::{
-        Learner, SupervisedTraining, metric::LossMetric, renderer::tui::TuiMetricsRendererWrapper,
+        metric::LossMetric, renderer::tui::TuiMetricsRendererWrapper, Learner, SupervisedTraining,
     },
 };
-use lecture2::{
+use colab_3a::{
     common::{data::write_normalization_params, model::ModelConfig, prep::prepare_data},
     trainer::batcher::HeartBatcher,
 };

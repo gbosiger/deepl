@@ -24,5 +24,5 @@ and to understand implementation details needed for that.
 ## Running the example
 
 From the workspace root, `cargo check --workspace --all-targets` checks your work.
-`cargo run -p lecture2 --bin train` and `cargo run -p lecture2 --bin predict` run
+`cargo run -p colab_3a --bin train` and `cargo run -p colab_3a --bin predict` run
 the two entry points. No arguments or backend demo have been implemented.

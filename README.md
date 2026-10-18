@@ -9,14 +9,14 @@ The root Cargo.toml is a virtual workspace: it has no executable of its own.
 with `workspace = true` and selects the Burn features it needs.
 
 To add an exercise, create a package directory, add it to `workspace.members`,
-and inherit dependencies as lecture2 does. Share code between exercises later
+and inherit dependencies as colab_3a does. Share code between exercises later
 when there is a clear need for it.
 
 From this directory:
 
 ```sh
 cargo check --workspace --all-targets
-cargo run -p lecture2 --bin train
-cargo run -p lecture2 --bin predict
+cargo run -p colab_3a --bin train
+cargo run -p colab_3a --bin predict
 ```
 

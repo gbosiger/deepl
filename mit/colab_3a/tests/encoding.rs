@@ -1,7 +1,9 @@
 use burn::backend::Flex;
 use burn::tensor::backend::BackendTypes;
-use lecture2::common::batch::HeartBatch;
-use lecture2::common::data::{EncodedData, HeartData, Normalization, encode_samples, normalize_heart_data};
+use colab_3a::common::batch::HeartBatch;
+use colab_3a::common::data::{
+    encode_samples, normalize_heart_data, EncodedData, HeartData, Normalization,
+};
 
 fn patients() -> Vec<HeartData> {
     let csv = "age,sex,cp,trestbps,chol,fbs,restecg,thalach,exang,oldpeak,slope,ca,thal,target\n\

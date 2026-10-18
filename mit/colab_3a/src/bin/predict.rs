@@ -1,5 +1,5 @@
 use burn::{module::Module, record::DefaultRecorder, tensor::backend::BackendTypes};
-use lecture2::common::{batch::HeartBatch, data::*, model::ModelConfig};
+use colab_3a::common::{batch::HeartBatch, data::*, model::ModelConfig};
 use std::path::Path;
 
 type InferenceBackend = burn::backend::Flex;

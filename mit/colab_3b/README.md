@@ -85,12 +85,12 @@ The task also requires `bash`, `curl`, and `gzip` on your PATH. From the workspa
 root, run:
 
 ```sh
-cargo make --cwd mit/lecture3 --no-workspace download-data
+cargo make --cwd mit/colab_3b --no-workspace download-data
 ```
 
 `--cwd` selects lecture 3's task file and data directory. `--no-workspace`
 prevents cargo-make from running the task across all workspace members (lecture 2
-does not define this task). If already inside `mit/lecture3`, use
+does not define this task). If already inside `mit/colab_3b`, use
 `cargo make --no-workspace download-data` instead.
 
 It downloads these four files into lecture-local `data/`:
@@ -102,7 +102,7 @@ It downloads these four files into lecture-local `data/`:
 
 The task decompresses each file with `gzip -dk`, keeping the original `.gz` file
 alongside its uncompressed IDX file. Existing downloads and uncompressed files
-are skipped. The entire `mit/lecture3/data/` directory is ignored by Git.
+are skipped. The entire `mit/colab_3b/data/` directory is ignored by Git.
 
 This is an explicit setup step, not a build dependency: compiling, training, and
 prediction should not silently download data. The Rust loader will read the
